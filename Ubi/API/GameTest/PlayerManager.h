@@ -22,6 +22,8 @@ class PlayerManager
 		float mass;
 		float testTimeRemaining;
 
+		bool realPlayer;
+
 	};
 
 public:
@@ -37,8 +39,11 @@ public:
 	void OnClick();
 	void WhileSelected();
 	void ApplyPhysics(float deltaTime);
-	string text;
 
+	//For Debugging
+	string text;
+	string text2;
+	//float highestRecordedSpeed;
 private:
 	vector<PlayerBall> playerBalls;
 	vector<PlayerBall*> fakePlayers;
@@ -55,5 +60,10 @@ private:
 	int simulatedPhysicsTests = 6;
 	int maxSimulatedSteps = 15;
 	vector<LevelManager::LineSegment> vecLines;
+
+	float respawnXPos;
+	float respawnYPos;
+
+	
 };
 

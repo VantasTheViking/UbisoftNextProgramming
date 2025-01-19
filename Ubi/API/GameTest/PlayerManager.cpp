@@ -13,6 +13,9 @@ PlayerManager::PlayerManager(float setPlayerRadius, float setPlayerSegments, flo
 	playerSegments = setPlayerSegments;
 	swingStrength = setSwingStrength;
 	friction = setFriction;
+
+
+
 	/*
 	* float sx, float sy, float sRadius, int id
 	xPos = sx;
@@ -45,7 +48,9 @@ void PlayerManager::CreatePlayer(float sx, float sy, float m) {
 	playerBall.radius = playerRadius;
 	playerBall.playerID = playerCount;
 	playerBall.testTimeRemaining = 0;
+	playerBall.realPlayer = true;
 	playerCount++;
+
 
 
 	playerBalls.emplace_back(playerBall);
@@ -78,6 +83,7 @@ void PlayerManager::SimulatePhysics(float deltaTime) {
 		for (int j = 0; j < 20; j++) {
 			ApplyPhysics(timePerTest);
 			CheckPlayerCollisions();
+
 			
 		}
 
@@ -99,6 +105,24 @@ void PlayerManager::DrawPlayers() {
 			float eX = player.xPos + player.radius * cos(end);
 
 			float eY = player.yPos + player.radius * sin(end);
+
+			App::DrawLine(sX, sY, eX, eY, 1, 1, 1);
+
+		}
+	}
+	for each (auto& player in fakePlayers)
+	{
+		float increment = 2 * 3.14159 / playerSegments;
+
+		for (int i = 0; i <= playerSegments; i++) {
+			float start = i * increment;
+			float end = (i + 1) * increment;
+			float sX = player->xPos + 10 * cos(start);
+
+			float sY = player->yPos + 10 * sin(start);
+			float eX = player->xPos + 10 * cos(end);
+
+			float eY = player->yPos + 10 * sin(end);
 
 			App::DrawLine(sX, sY, eX, eY, 1, 1, 1);
 
@@ -131,10 +155,12 @@ void PlayerManager::OnClick() {
 			pSelectedPlayer = nullptr;
 			
 
+
 			for (auto& player : playerBalls) {
 				if (CheckPointCollision(player, mouseXPos, mouseYPos)) {
 					selected = true;
-					text = "PP";
+					//
+					// text = "PP";
 					pSelectedPlayer = &player;
 					break;
 
@@ -150,7 +176,7 @@ void PlayerManager::OnClick() {
 
 			selected = false;
 			pSelectedPlayer = nullptr;
-			text = "";
+			//text = "";
 		}
 		
 
@@ -178,39 +204,51 @@ void PlayerManager::CheckPlayerCollisions() {
 
 		//Player To Edge
 		for (auto& edge : vecLines) {
+			
+			//Find closest point to line
 			float lineX1 = edge.eXPos - edge.sXPos;
 			float lineY1 = edge.eYPos - edge.sYPos;
 
 			float lineX2 = p1.xPos - edge.sXPos;
 			float lineY2 = p1.yPos - edge.sYPos;
+			
+			
 
+			
 			float edgeLength = pow(lineX1, 2) + pow(lineY1, 2);
+			
+			//float edgeLength = GetDistance(edge.sXPos, edge.sYPos, edge.eXPos, edge.eYPos);
 
 			float t = max(0, min(edgeLength, (lineX1 * lineX2 + lineY1 * lineY2))) / edgeLength;
 
 			float closestPointX = edge.sXPos + t * lineX1;
 			float closestPointY = edge.sYPos + t * lineY1;
+			
+
+
 
 			float distance = GetDistance(p1.xPos, p1.yPos, closestPointX, closestPointY);
 
 			if (distance <= p1.radius) {
-
+				
 				PlayerBall* fakePlayer = new PlayerBall();
 				fakePlayer->radius = 1;
-				fakePlayer->mass = p1.mass * 1;
+				fakePlayer->mass = p1.mass * 0.8f;
 				fakePlayer->xPos = closestPointX;
 				fakePlayer->yPos = closestPointY;
 				fakePlayer->xVel = -p1.xVel;
 				fakePlayer->yVel = -p1.yVel;
+				fakePlayer->realPlayer = false;
 
 				fakePlayers.push_back(fakePlayer);
 				collidingPlayers.push_back({ &p1, fakePlayer });
 
-				float overlapDistance = 1.0f * (distance - p1.radius - fakePlayer->radius);
-
-				p1.xPos -= overlapDistance * (p1.xPos - fakePlayer->xPos) / distance / 2;
-				p1.yPos -= overlapDistance * (p1.yPos - fakePlayer->yPos) / distance / 2;
-
+				float overlapDistance = distance - p1.radius;
+				
+				p1.xPos -= overlapDistance * (p1.xPos - fakePlayer->xPos) / distance;
+				p1.yPos -= overlapDistance * (p1.yPos - fakePlayer->yPos) / distance;
+				
+				
 
 
 			}
@@ -236,13 +274,13 @@ void PlayerManager::CheckPlayerCollisions() {
 
 
 					//Force Players Away from each other
-					float overlapDistance = (distance - p1.radius - p2.radius);
+					float overlapDistance = 0.5f * (distance - p1.radius - p2.radius);
 
-					p1.xPos -= overlapDistance * (p1.xPos - p2.xPos) / distance / 2;
-					p1.yPos -= overlapDistance * (p1.yPos - p2.yPos) / distance / 2;
+					p1.xPos -= overlapDistance * (p1.xPos - p2.xPos) / distance;
+					p1.yPos -= overlapDistance * (p1.yPos - p2.yPos) / distance;
 					
-					p2.xPos += overlapDistance * (p1.xPos - p2.xPos) / distance / 2;
-					p2.yPos += overlapDistance * (p1.yPos - p2.yPos) / distance / 2;
+					p2.xPos += overlapDistance * (p1.xPos - p2.xPos) / distance;
+					p2.yPos += overlapDistance * (p1.yPos - p2.yPos) / distance;
 
 
 					
@@ -273,37 +311,31 @@ void PlayerManager::ApplyElasticCollision() {
 		PlayerBall* p2 = playerPair.second;
 
 		float distance = GetDistance(p1->xPos, p1->yPos, p2->xPos, p2->yPos);
-
+		
 		float normX = (p2->xPos - p1->xPos) / distance;
 		float normY = (p2->yPos - p1->yPos) / distance;
 
-		float tanX = -normY;
-		float tanY = normX;
+		float kx = (p1->xVel - p2->xVel);
+		float ky = (p1->yVel - p2->yVel);
+		float p = 2.0f * (normX * kx + normY * ky) / (p1->mass + p2->mass);
 
-		float dotTan1 = p1->xVel * tanX + p1->xVel * tanY;
-		float dotTan2 = p2->xVel * tanX + p2->xVel * tanY;
+		p1->xVel = p1->xVel - p * p2->mass * normX;
+		p1->yVel = p1->yVel - p * p2->mass * normY;
+		p2->xVel = p2->xVel + p * p1->mass * normX;
+		p2->yVel = p2->yVel + p * p1->mass * normY;
 
-		float dotNorm1 = p1 -> xVel * normX + p1->yVel * normY;
-		float dotNorm2 = p2 -> xVel * normX + p2->yVel * normY;
-
-		float momentum1 = (dotNorm1 * (p1->mass - p2->mass) + 2.0f * p2->mass * dotNorm2) / (p1->mass + p2->mass);
-		float momentum2 = (dotNorm2 * (p2->mass - p1->mass) + 2.0f * p1->mass * dotNorm1) / (p1->mass + p2->mass);
-
-
-		//Update Velocities
-		p1->xVel = tanX * dotTan1 + normX * momentum1;
-		p1->yVel = tanY * dotTan1 + normY * momentum1;
-
-		p2->xVel = tanX * dotTan2 + normX * momentum2;
-		p2->yVel = tanY * dotTan2 + normY * momentum2;
+		
 
 	}
 
 	//Clear fake balls
+	
 	for (auto& p : fakePlayers) {
 		delete p;
 	}
 	fakePlayers.clear();
+	
+	
 	collidingPlayers.clear();
 }
 
@@ -323,23 +355,35 @@ void PlayerManager::ApplyPhysics(float deltaTime) {
 			p.xVel += p.xAcc * p.testTimeRemaining;
 			p.yVel += p.yAcc * p.testTimeRemaining;
 
+			/*
+			if (sqrt(p.xVel * p.xVel + p.yVel * p.yVel) > highestRecordedSpeed) {
+				highestRecordedSpeed = sqrt(p.xVel * p.xVel + p.yVel * p.yVel);
+			}
+
+			text = to_string(highestRecordedSpeed);
+			*/
+
+			//Cap Player Speed
+			if (p.xVel > 5) {
+				p.xVel = 5;
+			}
+			else if (p.xVel < -5) {
+				p.xVel = -5;
+			}
+			if (p.yVel > 5) {
+				p.yVel = 5;
+			}
+			else if (p.yVel < -5) {
+				p.yVel = -5;
+			}
+
 			//Update Position
 			p.xPos += p.xVel * p.testTimeRemaining;
 			p.yPos += p.yVel * p.testTimeRemaining;
 
-			//Cap Player Speed
-			if (p.xVel > 50) {
-				p.xVel = 50;
-			}
-			if (p.yVel > 50) {
-				p.yVel = 50;
-			}
-			if (p.xVel < -50) {
-				p.xVel = -50;
-			}
-			if (p.yVel < -50) {
-				p.yVel = -50;
-			}
+			
+			
+			
 			
 			//Stop player when below speed;
 			if (abs(p.xVel) < 0.001f) {
@@ -351,4 +395,8 @@ void PlayerManager::ApplyPhysics(float deltaTime) {
 		}
 		
 	}
+
+
+
+
 }

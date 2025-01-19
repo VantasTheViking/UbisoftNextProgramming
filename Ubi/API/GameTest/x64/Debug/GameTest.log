@@ -1,24 +1,6 @@
 ﻿  GameTest.cpp
-  PlayerManager.cpp
-C:\Users\Ethan Miguel\Desktop\Ubi\API\GameTest\PlayerManager.cpp(91,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file '/PlayerManager.cpp')
-  
-C:\Users\Ethan Miguel\Desktop\Ubi\API\GameTest\PlayerManager.cpp(96,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file '/PlayerManager.cpp')
-  
-C:\Users\Ethan Miguel\Desktop\Ubi\API\GameTest\PlayerManager.cpp(98,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file '/PlayerManager.cpp')
-  
-C:\Users\Ethan Miguel\Desktop\Ubi\API\GameTest\PlayerManager.cpp(99,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file '/PlayerManager.cpp')
-  
-C:\Users\Ethan Miguel\Desktop\Ubi\API\GameTest\PlayerManager.cpp(101,13): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file '/PlayerManager.cpp')
-  
-C:\Users\Ethan Miguel\Desktop\Ubi\API\GameTest\PlayerManager.cpp(187,21): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  (compiling source file '/PlayerManager.cpp')
-  
+  LevelManager.cpp
   Generating Code...
-  GameTest.vcxproj -> C:\Users\Ethan Miguel\Desktop\Ubi\API\x64\Debug\GameTest.exe
-  C:\Users\Ethan Miguel\Desktop\Ubi\API\\GameTest\glut\bin\x64\freeglut.dll
+  GameTest.vcxproj -> C:\Users\Ethan Miguel\Documents\GitHub\UbisoftNextProgramming\Ubi\API\x64\Debug\GameTest.exe
+  C:\Users\Ethan Miguel\Documents\GitHub\UbisoftNextProgramming\Ubi\API\\GameTest\glut\bin\x64\freeglut.dll
   1 File(s) copied

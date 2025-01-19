@@ -18,7 +18,7 @@ using namespace std;
 
 //CSimpleSprite *testSprite;
 //PlayerManager player1(100,100,20,1);
-PlayerManager playerManager(50, 20, 0.01f, 0.001f);
+PlayerManager playerManager(20, 20, 0.01f, 0.001f);
 LevelManager levelManager;
 
 
@@ -53,14 +53,9 @@ void Init()
 	testSprite->SetScale(1.0f);
 	//------------------------------------------------------------------------
 	*/
-	playerManager.CreatePlayer(100, 100, 1);
-	playerManager.CreatePlayer(200, 200, 1);
-	levelManager.CreateLine(1, 1, 1023, 1);
-	levelManager.CreateLine(1, 1, 1, 767);
-	levelManager.CreateLine(1023, 1, 1023, 767);
-	levelManager.CreateLine(1, 767, 1023, 767);
-
-
+	playerManager.CreatePlayer(25, 50, 1);
+	playerManager.CreatePlayer(75, 50, 1);
+	levelManager.CreateLevel1();
 	playerManager.UpdateLineVec(levelManager);
 }
 
@@ -162,8 +157,9 @@ void Render()
 
 
 	App::Print(100, 100, playerManager.text.c_str());
+	App::Print(100, 200, playerManager.text2.c_str());
 
-	levelManager.LinesUpdate(1, 0, 0);
+	levelManager.LinesUpdate();
 
 
 	//------------------------------------------------------------------------
