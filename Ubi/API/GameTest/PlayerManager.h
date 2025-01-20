@@ -18,11 +18,18 @@ class PlayerManager
 		float xAcc, yAcc;
 		//Radius
 		float radius;
+		//ID
 		int playerID;
+		//Ball Mass
 		float mass;
+		//Inside Hole
+		float finished;
+		//Score
+		int stroke = 0;
+
 		float testTimeRemaining;
 
-		bool realPlayer;
+
 
 	};
 
@@ -32,17 +39,24 @@ public:
 	void DrawPlayers();
 	void CreatePlayer(float sx, float sy, float m = 1);
 	void Update(float deltaTime);
+	void CheckLevelCompleation();
+	bool GetLevelFinished();
 	void SimulatePhysics(float deltaTime);
 	void CheckPlayerCollisions();
 	void ApplyElasticCollision();
+	void RespawnPlayer(int id);
+	void ExilePlayer(int id);
 	bool CheckPointCollision(PlayerBall player, float px, float py);
 	void OnClick();
 	void WhileSelected();
 	void ApplyPhysics(float deltaTime);
 
+	void SetRespawnPoints(vector<float> respawnCoords);
+
 	//For Debugging
 	string text;
 	string text2;
+	bool writeWinText;
 	//float highestRecordedSpeed;
 private:
 	vector<PlayerBall> playerBalls;
@@ -57,13 +71,23 @@ private:
 	float mouseYPos;
 	float swingStrength;
 	float friction;
+	
+	float speedBoost = 1.005f;
+	
 	int simulatedPhysicsTests = 6;
 	int maxSimulatedSteps = 15;
 	vector<LevelManager::LineSegment> vecLines;
 
-	float respawnXPos;
-	float respawnYPos;
 
+
+	float respawnXPos1;
+	float respawnYPos1;
+	float respawnXPos2;
+	float respawnYPos2;
+
+	int player1Stroke;
+	int player2Stroke;
 	
+	bool levelFinished;
 };
 

@@ -48,7 +48,6 @@ void PlayerManager::CreatePlayer(float sx, float sy, float m) {
 	playerBall.radius = playerRadius;
 	playerBall.playerID = playerCount;
 	playerBall.testTimeRemaining = 0;
-	playerBall.realPlayer = true;
 	playerCount++;
 
 
@@ -67,9 +66,28 @@ void PlayerManager::Update(float deltaTime) {
 	OnClick();
 	SimulatePhysics(deltaTime);
 	DrawPlayers();
+	CheckLevelCompleation();
 
 	//text = to_string(vecLines[0].sXPos);
 
+}
+
+void PlayerManager::CheckLevelCompleation() {
+	bool levelIncomplete = false;
+	for (auto& p : playerBalls) {
+		if (!p.finished) {
+			levelIncomplete = true;
+		}
+
+	}
+
+	if (!levelIncomplete) {
+		levelFinished = true;
+	}
+}
+
+bool PlayerManager::GetLevelFinished() {
+	return levelFinished;
 }
 
 void PlayerManager::SimulatePhysics(float deltaTime) {
@@ -106,7 +124,14 @@ void PlayerManager::DrawPlayers() {
 
 			float eY = player.yPos + player.radius * sin(end);
 
-			App::DrawLine(sX, sY, eX, eY, 1, 1, 1);
+			if (player.playerID == 0) {
+
+				App::DrawLine(sX, sY, eX, eY, 1, 0, 0);
+			}
+			else {
+
+				App::DrawLine(sX, sY, eX, eY, 0, 0, 1);
+			}
 
 		}
 	}
@@ -127,6 +152,34 @@ void PlayerManager::DrawPlayers() {
 			App::DrawLine(sX, sY, eX, eY, 1, 1, 1);
 
 		}
+	}
+
+	//text = to_string(respawnXPos1);
+	//text2 = to_string(respawnYPos1);
+	if (writeWinText) {
+
+		if (playerBalls[0].stroke < playerBalls[1].stroke) {
+
+			text = "P1 WINS with Strokes: " + to_string(playerBalls[0].stroke);
+			text2 = "P2 LOSES with Strokes: " + to_string(playerBalls[1].stroke);
+		}else if (playerBalls[0].stroke > playerBalls[1].stroke) {
+
+			text = "P1 LOSES with Strokes: " + to_string(playerBalls[0].stroke);
+			text2 = "P2 WINS with Strokes: " + to_string(playerBalls[1].stroke);
+		}
+		else {
+
+			text = "P1 TIES with Strokes: " + to_string(playerBalls[0].stroke);
+			text2 = "P2 TIES with Strokes: " + to_string(playerBalls[1].stroke);
+
+		}
+
+	}
+	else {
+
+		text = "P1 Strokes: " + to_string(playerBalls[0].stroke);
+		text2 = "P2 Strokes: " + to_string(playerBalls[1].stroke);
+
 	}
 
 	WhileSelected();
@@ -173,7 +226,10 @@ void PlayerManager::OnClick() {
 
 			pSelectedPlayer->xVel = swingStrength * ((pSelectedPlayer->xPos) - mouseXPos);
 			pSelectedPlayer->yVel = swingStrength * ((pSelectedPlayer->yPos) - mouseYPos);
+			if (!writeWinText) {
 
+				pSelectedPlayer->stroke++;
+			}
 			selected = false;
 			pSelectedPlayer = nullptr;
 			//text = "";
@@ -186,13 +242,15 @@ void PlayerManager::OnClick() {
 void PlayerManager::WhileSelected() {
 	if (pSelectedPlayer != nullptr) {
 		
+
+
 		//pSelectedPlayer->xPos = mouseXPos;
 		//pSelectedPlayer->yPos = mouseYPos;
 		
 		//Show Player Swing
 		App::DrawLine(pSelectedPlayer->xPos, pSelectedPlayer->yPos, mouseXPos, mouseYPos, 0, 1, 1);
 		playerCount++;
-		text = to_string(GetDistance(pSelectedPlayer->xPos, pSelectedPlayer->yPos, mouseXPos, mouseYPos));
+		//text = to_string(GetDistance(pSelectedPlayer->xPos, pSelectedPlayer->yPos, mouseXPos, mouseYPos));
 	}
 }
 
@@ -231,23 +289,44 @@ void PlayerManager::CheckPlayerCollisions() {
 
 			if (distance <= p1.radius) {
 				
-				PlayerBall* fakePlayer = new PlayerBall();
-				fakePlayer->radius = 1;
-				fakePlayer->mass = p1.mass * 0.8f;
-				fakePlayer->xPos = closestPointX;
-				fakePlayer->yPos = closestPointY;
-				fakePlayer->xVel = -p1.xVel;
-				fakePlayer->yVel = -p1.yVel;
-				fakePlayer->realPlayer = false;
 
-				fakePlayers.push_back(fakePlayer);
-				collidingPlayers.push_back({ &p1, fakePlayer });
+				if (edge.type == LevelManager::Obstacle) {
+					//Hits Obstacle
+					PlayerBall* fakePlayer = new PlayerBall();
+					fakePlayer->radius = 1;
+					fakePlayer->mass = p1.mass * 0.8f;
+					fakePlayer->xPos = closestPointX;
+					fakePlayer->yPos = closestPointY;
+					fakePlayer->xVel = -p1.xVel;
+					fakePlayer->yVel = -p1.yVel;
 
-				float overlapDistance = distance - p1.radius;
-				
-				p1.xPos -= overlapDistance * (p1.xPos - fakePlayer->xPos) / distance;
-				p1.yPos -= overlapDistance * (p1.yPos - fakePlayer->yPos) / distance;
-				
+
+					fakePlayers.push_back(fakePlayer);
+					collidingPlayers.push_back({ &p1, fakePlayer });
+
+					float overlapDistance = distance - p1.radius;
+
+					p1.xPos -= overlapDistance * (p1.xPos - fakePlayer->xPos) / distance;
+					p1.yPos -= overlapDistance * (p1.yPos - fakePlayer->yPos) / distance;
+				}
+				//Goes inside pit
+				else if (edge.type == LevelManager::Pit) {
+					RespawnPlayer(p1.playerID);
+				}
+				//Triggers a speedboost edge
+				else if (edge.type == LevelManager::Speedboost) {
+					p1.xVel *= speedBoost;
+					p1.yVel *= speedBoost;
+
+				}
+				//Triggers Goal Hole
+				else if (edge.type == LevelManager::Hole) {
+					//If player is slow enough
+					if (sqrt(p1.xVel * p1.xVel + p1.yVel * p1.yVel) < 0.06f) {
+
+						ExilePlayer(p1.playerID);
+					}
+				}
 				
 
 
@@ -396,7 +475,57 @@ void PlayerManager::ApplyPhysics(float deltaTime) {
 		
 	}
 
+}
 
+void PlayerManager::SetRespawnPoints(vector<float> respawnCoords) {
+	respawnXPos1 = respawnCoords[0];
+	respawnYPos1 = respawnCoords[1];
+	respawnXPos2 = respawnCoords[2];
+	respawnYPos2 = respawnCoords[3];
+	levelFinished = false;
+}
 
+void PlayerManager::RespawnPlayer(int id) {
+	for (auto &p : playerBalls) {
+		if (p.playerID == id) {
+			if (p.playerID == 0) {
+				p.xPos = respawnXPos1;
+				p.yPos = respawnYPos1;
+			}
+			else {
+				p.xPos = respawnXPos2;
+				p.yPos = respawnYPos2;
+			}
+			p.xVel = 0;
+			p.yVel = 0;
+			p.xAcc = 0;
+			p.yAcc = 0;
+			p.finished = false;
+		}
+
+	}
+	
+}
+
+void PlayerManager::ExilePlayer(int id) {
+	for (auto& p : playerBalls) {
+		if (p.playerID == id) {
+			if (p.playerID == 0) {
+				p.xPos = 2000;
+				p.yPos = 2000;
+			}
+			else {
+				p.xPos = 3000;
+				p.yPos = 3000;
+			}
+			p.xVel = 0;
+			p.yVel = 0;
+			p.xAcc = 0;
+			p.yAcc = 0;
+
+			p.finished = true;;
+		}
+
+	}
 
 }
